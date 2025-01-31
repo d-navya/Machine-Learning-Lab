@@ -190,3 +190,17 @@ def jaccard_and_smc(data):
     smc = (f11 + f00) / (f00 + f01 + f10 + f11)
     
     return jc, smc
+
+#A9
+from sklearn.metrics.pairwise import cosine_similarity
+
+def cosine_similarity_measure(data):
+    # Select the first two rows
+    vector1 = data.iloc[0].values.reshape(1, -1)
+    vector2 = data.iloc[1].values.reshape(1, -1)
+    
+    # Calculate cosine similarity
+    similarity = cosine_similarity(vector1, vector2)
+    
+    return similarity[0][0]
+
