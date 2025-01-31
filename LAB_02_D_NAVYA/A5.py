@@ -115,3 +115,78 @@ if __name__ == "__main__":
     file_path = "/home/navya/Machine-Learning-Lab/LAB_02_D_NAVYA/lab_session_data.xlsx"  # Path to the Excel file
     sheet_name = "thyroid0387_UCI"  # Update this to the correct sheet name in your file
     main(file_path, sheet_name)
+
+
+#A6
+from sklearn.impute import SimpleImputer
+
+def impute_data(data):
+    # Identify numeric and categorical columns
+    numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
+    categorical_cols = data.select_dtypes(include=['object']).columns
+    
+    # Impute numeric columns with mean or median
+    for col in numeric_cols:
+        # Check for outliers using IQR method
+        Q1 = data[col].quantile(0.25)
+        Q3 = data[col].quantile(0.75)
+        IQR = Q3 - Q1
+        outliers = data[col][(data[col] < (Q1 - 1.5 * IQR)) | (data[col] > (Q3 + 1.5 * IQR))]
+
+        # If the column contains outliers, use median for imputation
+        if len(outliers) > 0:
+            imputer = SimpleImputer(strategy='median')
+        else:
+            imputer = SimpleImputer(strategy='mean')
+        
+        data[col] = imputer.fit_transform(data[[col]])
+    
+    # Impute categorical columns with mode
+    for col in categorical_cols:
+        imputer = SimpleImputer(strategy='most_frequent')
+        data[col] = imputer.fit_transform(data[[col]])
+
+    return data
+
+#A7
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
+def normalize_data(data, scaling_type="minmax"):
+    numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
+    
+    if scaling_type == "minmax":
+        # Apply Min-Max Scaling
+        min_max_scaler = MinMaxScaler()
+        data[numeric_cols] = min_max_scaler.fit_transform(data[numeric_cols])
+    elif scaling_type == "standard":
+        # Apply Standard Scaling (Z-score)
+        standard_scaler = StandardScaler()
+        data[numeric_cols] = standard_scaler.fit_transform(data[numeric_cols])
+    
+    return data
+
+#A8
+def jaccard_and_smc(data):
+    # Select the first two rows
+    vector1 = data.iloc[0]
+    vector2 = data.iloc[1]
+    
+    # Select only binary attributes (0 or 1 values)
+    binary_cols = data.columns[data.isin([0, 1]).all()]
+    
+    vector1_binary = vector1[binary_cols]
+    vector2_binary = vector2[binary_cols]
+    
+    # Calculate f11, f01, f10, f00
+    f11 = sum((vector1_binary == 1) & (vector2_binary == 1))  # Both 1
+    f01 = sum((vector1_binary == 0) & (vector2_binary == 1))  # 0 in vector1, 1 in vector2
+    f10 = sum((vector1_binary == 1) & (vector2_binary == 0))  # 1 in vector1, 0 in vector2
+    f00 = sum((vector1_binary == 0) & (vector2_binary == 0))  # Both 0
+    
+    # Jaccard Coefficient
+    jc = f11 / (f01 + f10 + f11)
+    
+    # Simple Matching Coefficient
+    smc = (f11 + f00) / (f00 + f01 + f10 + f11)
+    
+    return jc, smc
