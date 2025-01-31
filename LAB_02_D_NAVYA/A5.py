@@ -157,6 +157,69 @@ def cosine_similarity_measure(data):
     similarity = cosine_similarity(vector1, vector2)
     return similarity[0][0]
 
+import seaborn as sns
+
+# Function to calculate pairwise Jaccard and Simple Matching Coefficients for the first 20 rows
+def calculate_pairwise_similarities(data):
+    num_rows = min(len(data), 20)  # Limit to the first 20 rows
+    jc_matrix = np.zeros((num_rows, num_rows))
+    smc_matrix = np.zeros((num_rows, num_rows))
+    cosine_matrix = np.zeros((num_rows, num_rows))
+    
+    for i in range(num_rows):
+        for j in range(i, num_rows):  # Only calculate the upper triangle (symmetric matrix)
+            vector1 = data.iloc[i]
+            vector2 = data.iloc[j]
+            
+            # Select only binary attributes (0 or 1 values)
+            binary_cols = data.columns[data.isin([0, 1]).all()]
+            
+            vector1_binary = vector1[binary_cols]
+            vector2_binary = vector2[binary_cols]
+            
+            # Jaccard Coefficient Calculation
+            f11 = sum((vector1_binary == 1) & (vector2_binary == 1))  # Both 1
+            f01 = sum((vector1_binary == 0) & (vector2_binary == 1))  # 0 in vector1, 1 in vector2
+            f10 = sum((vector1_binary == 1) & (vector2_binary == 0))  # 1 in vector1, 0 in vector2
+            f00 = sum((vector1_binary == 0) & (vector2_binary == 0))  # Both 0
+            jc = f11 / (f01 + f10 + f11)  # Jaccard Coefficient
+            jc_matrix[i, j] = jc
+            jc_matrix[j, i] = jc  # Symmetric matrix
+            
+            # Simple Matching Coefficient Calculation
+            smc = (f11 + f00) / (f00 + f01 + f10 + f11)  # Simple Matching Coefficient
+            smc_matrix[i, j] = smc
+            smc_matrix[j, i] = smc  # Symmetric matrix
+            
+            # Cosine Similarity Calculation
+            vector1_vals = vector1.values.reshape(1, -1)
+            vector2_vals = vector2.values.reshape(1, -1)
+            cosine_sim = cosine_similarity(vector1_vals, vector2_vals)
+            cosine_matrix[i, j] = cosine_sim[0][0]
+            cosine_matrix[j, i] = cosine_sim[0][0]  # Symmetric matrix
+    
+    return jc_matrix, smc_matrix, cosine_matrix
+
+# Function to plot heatmaps for Jaccard, SMC, and Cosine Similarity matrices
+def plot_similarity_heatmaps(jc_matrix, smc_matrix, cosine_matrix):
+    # Plot Jaccard Coefficient Heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(jc_matrix, annot=True, cmap="Blues", fmt=".2f", cbar=True)
+    plt.title("Jaccard Coefficient Heatmap")
+    plt.show()
+
+    # Plot Simple Matching Coefficient Heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(smc_matrix, annot=True, cmap="Blues", fmt=".2f", cbar=True)
+    plt.title("Simple Matching Coefficient Heatmap")
+    plt.show()
+
+    # Plot Cosine Similarity Heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cosine_matrix, annot=True, cmap="Blues", fmt=".2f", cbar=True)
+    plt.title("Cosine Similarity Heatmap")
+    plt.show()
+
 # Main function to orchestrate the entire analysis
 def main(file_path, sheet_name, scaling_type="minmax"):
     # Load and clean data
@@ -173,6 +236,12 @@ def main(file_path, sheet_name, scaling_type="minmax"):
     
     # Calculate Cosine Similarity for the first two observations
     cosine_similarity_value = cosine_similarity_measure(data_normalized)
+
+     # Calculate pairwise similarities (Jaccard, SMC, Cosine Similarity)
+    jc_matrix, smc_matrix, cosine_matrix = calculate_pairwise_similarities(data_normalized)
+    
+    # Plot heatmaps
+    plot_similarity_heatmaps(jc_matrix, smc_matrix, cosine_matrix)
     
     # Outputs
     print("\nData after cleaning and encoding:")
