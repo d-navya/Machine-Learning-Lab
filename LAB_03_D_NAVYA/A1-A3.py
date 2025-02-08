@@ -4,97 +4,87 @@ import matplotlib.pyplot as plt
 from scipy.spatial.distance import minkowski
 from sklearn.preprocessing import StandardScaler
 
-def preprocess_data(df):
-    """Prepares the dataset by dropping unnecessary columns and encoding the target variable."""
-    drop_cols = ['Question', 'Correct_Code', 'Code_with_Error', 'code_processed',
-                 'code_with_question', 'code_comment', 'code_with_solution', 'ast']
-    df.drop(columns=drop_cols, inplace=True)
-
-    # Convert 'Final_Marks' into a binary class label
-    df['Grade'] = (df['Final_Marks'] <= 5).astype(int)
-
+def clean_data(df):
+    """Removes unnecessary columns and converts the target variable into binary labels."""
+    columns_to_drop = ['Question', 'Correct_Code', 'Code_with_Error', 'code_processed',
+                       'code_with_question', 'code_comment', 'code_with_solution', 'ast']
+    df.drop(columns=columns_to_drop, inplace=True)
+    
+    # Convert 'Final_Marks' into binary labels (0: low score, 1: high score)
+    df['Grade'] = (df['Final_Marks'] > 5).astype(int)
+    
     return df
 
-
-def extract_errors(df):
-    """Extracts unique error types from 'Type_of_Error' column and one-hot encodes them."""
-    errors = set()
-    for row in df['Type_of_Error']:
-        error_list = row.strip("[]").replace("'", "").split(", ")  # Cleaning up format
-        errors.update(error_list)
-
-    # One-hot encoding error types
-    for error in errors:
+def encode_error_types(df):
+    """Extracts unique error types from 'Type_of_Error' and applies one-hot encoding."""
+    unique_errors = set()
+    
+    for entry in df['Type_of_Error']:
+        errors = entry.strip("[]").replace("'", "").split(", ")
+        unique_errors.update(errors)
+    
+    for error in unique_errors:
         df[error] = df['Type_of_Error'].apply(lambda x: 1 if error in x else 0)
-
+    
     df.drop(columns=['Type_of_Error'], inplace=True)
-    
     return df
 
-def load_data(file_path):
-    """
-    Load the dataset and preprocess it.
-    """
+def load_and_process_data(file_path):
+    """Loads the dataset, cleans it, and encodes categorical variables."""
     df = pd.read_excel(file_path)
-    df = preprocess_data(df)
-    df = extract_errors(df)
+    df = clean_data(df)
+    df = encode_error_types(df)
     return df
 
-def extract_features_labels(df):
-    """
-    Extract features and labels from the numerical dataframe.
-    """
-    df.fillna(df.median(), inplace=True)  # Handling NaN values
+def prepare_features_and_labels(df):
+    """Handles missing values, scales features, and separates labels."""
+    df.fillna(df.median(), inplace=True)
     
-    features = df.drop(columns=['Grade']) 
+    features = df.drop(columns=['Grade'])
     scaler = StandardScaler()
     features = scaler.fit_transform(features)
+    
     labels = df['Grade']
     return features, labels
 
-def calculate_centroids_and_spread(features, labels, class_1, class_2):
-    """
-    Calculate centroids and spread (standard deviation) for two selected classes.
-    """
-    class_1_vectors = features[labels == class_1]
-    class_2_vectors = features[labels == class_2]
+def compute_class_statistics(features, labels, class_a, class_b):
+    """Computes centroids, standard deviations, and interclass distance for two classes."""
+    class_a_vectors = features[labels == class_a]
+    class_b_vectors = features[labels == class_b]
     
-    centroid_1 = np.mean(class_1_vectors, axis=0)
-    centroid_2 = np.mean(class_2_vectors, axis=0)
+    centroid_a = np.mean(class_a_vectors, axis=0)
+    centroid_b = np.mean(class_b_vectors, axis=0)
     
-    spread_1 = np.std(class_1_vectors, axis=0)
-    spread_2 = np.std(class_2_vectors, axis=0)
+    spread_a = np.std(class_a_vectors, axis=0)
+    spread_b = np.std(class_b_vectors, axis=0)
     
-    interclass_distance = np.linalg.norm(centroid_1 - centroid_2)
-    intra_class_distance = np.linalg.norm(spread_1 - spread_2)
+    interclass_distance = np.linalg.norm(centroid_a - centroid_b)
+    intra_class_distance = np.linalg.norm(spread_a - spread_b)
     
-    return centroid_1, spread_1, centroid_2, spread_2, interclass_distance
-def analyze_feature(numerical_df, feature_index):
-    """
-    Compute the mean and variance of a selected feature and plot its histogram.
-    """
-    feature_data = numerical_df.iloc[:, feature_index].dropna().values  # Drop NaN values
+    return centroid_a, spread_a, centroid_b, spread_b, interclass_distance
+
+def analyze_feature_distribution(df, feature_idx):
+    """Computes and visualizes the distribution of a selected feature."""
+    feature_values = df.iloc[:, feature_idx].dropna().values
     
-    mean_value = np.mean(feature_data)
-    variance_value = np.var(feature_data)
+    mean_val = np.mean(feature_values)
+    variance_val = np.var(feature_values)
     
     plt.figure(figsize=(8, 5))
-    plt.hist(feature_data, bins=10, edgecolor='black', alpha=0.7)
+    plt.hist(feature_values, bins=10, edgecolor='black', alpha=0.7)
     plt.xlabel("Feature Values")
     plt.ylabel("Frequency")
-    plt.title(f"Histogram for Feature: {numerical_df.columns[feature_index]}")
+    plt.title(f"Histogram for Feature: {df.columns[feature_idx]}")
     plt.show()
     
-    return mean_value, variance_value
+    return mean_val, variance_val
 
-def compute_minkowski_distance(features, vec_1_index, vec_2_index, r_values):
-    """
-    Compute Minkowski distance between two feature vectors for different r values.
-    """
-    vec_1 = features[vec_1_index]
-    vec_2 = features[vec_2_index]
+def compute_minkowski_distances(features, index_a, index_b, r_values):
+    """Calculates Minkowski distance for different r values and plots the results."""
+    vector_a = features[index_a]
+    vector_b = features[index_b]
     
-    distances = [minkowski(vec_1, vec_2, r) for r in r_values]
+    distances = [minkowski(vector_a, vector_b, r) for r in r_values]
     
     plt.figure(figsize=(8, 5))
     plt.plot(r_values, distances, marker='o', linestyle='-', color='b')
@@ -108,40 +98,29 @@ def compute_minkowski_distance(features, vec_1_index, vec_2_index, r_values):
     return distances
 
 if __name__ == "__main__":
-    # Load dataset
-    file_path = "LAB_03_D_NAVYA/15 - C.xlsx"  # Update this with the actual file path
-    df = load_data(file_path)
+    file_path = "LAB_03_D_NAVYA/15 - C.xlsx"
+    df = load_and_process_data(file_path)
     
-    # Extract features and labels
-    features, labels = extract_features_labels(df)
+    features, labels = prepare_features_and_labels(df)
     
-    # Define class labels for comparison
-    # class_1 means the Final_Marks <= 5, class_2 means the Final_Marks > 5
-    class_1, class_2 = 0, 1
+    class_a, class_b = 0, 1
+    centroid_a, spread_a, centroid_b, spread_b, interclass_dist = compute_class_statistics(features, labels, class_a, class_b)
     
-    # Calculate centroids, spread, and interclass distance
-    centroid_1, spread_1, centroid_2, spread_2, interclass_distance = calculate_centroids_and_spread(features, labels, class_1, class_2)
+    print(f"\nCentroid for Class {class_a}:\n", centroid_a)
+    print(f"\nSpread (Standard Deviation) for Class {class_a}:\n", spread_a)
+    print(f"\nCentroid for Class {class_b}:\n", centroid_b)
+    print(f"\nSpread (Standard Deviation) for Class {class_b}:\n", spread_b)
+    print(f"\nInterclass Distance between Class {class_a} and Class {class_b}: {interclass_dist:.4f}")
     
-    # Display results
-    print(f"\nCentroid for Class {class_1}:\n", centroid_1)
-    print(f"\nSpread (Standard Deviation) for Class {class_1}:\n", spread_1)
-    print(f"\nCentroid for Class {class_2}:\n", centroid_2)
-    print(f"\nSpread (Standard Deviation) for Class {class_2}:\n", spread_2)
-    print(f"\nInterclass Distance between Class {class_1} and Class {class_2}: {interclass_distance:.4f}")
+    feature_idx = 5
+    mean_val, variance_val = analyze_feature_distribution(df, feature_idx)
+    print(f"\nFeature: {df.columns[feature_idx]}")
+    print(f"\nMean: {mean_val:.4f}")
+    print(f"\nVariance: {variance_val:.4f}")
     
-    # Analyze a selected feature
-    feature_index = 5  # Modify if needed
-    mean_value, variance_value = analyze_feature(df, feature_index)
-    
-    print(f"\nFeature Selected: {df.columns[feature_index]}")
-    print(f"\nMean: {mean_value:.4f}")
-    print(f"\nVariance: {variance_value:.4f}")
-    
-    # Compute Minkowski distance
-    vec_1_index, vec_2_index = 0, 1  # Modify indices if needed
+    index_a, index_b = 0, 1
     r_values = np.arange(1, 11)
-    minkowski_distances = compute_minkowski_distance(features, vec_1_index, vec_2_index, r_values)
+    minkowski_dists = compute_minkowski_distances(features, index_a, index_b, r_values)
     
-    # Display Minkowski distances
-    for r, dist in zip(r_values, minkowski_distances):
+    for r, dist in zip(r_values, minkowski_dists):
         print(f"r = {r}: Minkowski Distance = {dist:.4f}")
