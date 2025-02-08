@@ -44,7 +44,7 @@ print(f"\n🔹 Interclass Distance between Class {class_1} and Class {class_2}: 
 # ─────────────────────────────────────────────────────────────
 
 # 🔹 Select a Feature (Change index if needed)
-feature_index = 0  # Modify if you want a different feature
+feature_index = 5  # Modify if you want a different feature
 feature_data = numerical_df.iloc[:, feature_index].dropna().values  # Drop NaN values
 
 # 🔹 Calculate Mean & Variance
@@ -63,3 +63,4 @@ plt.show()
 print(f"\n🔹 Feature Selected: {numerical_df.columns[feature_index]}")
 print(f"\n🔹 Mean: {mean_value:.4f}")
 print(f"\n🔹 Variance: {variance_value:.4f}")
+
