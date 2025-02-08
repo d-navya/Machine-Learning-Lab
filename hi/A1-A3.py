@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.spatial.distance import minkowski
 
 # 🔹 Load the dataset
 file_path = "hi/15 - C.xlsx"  # Update this with your actual file path
@@ -64,3 +65,24 @@ print(f"\n🔹 Feature Selected: {numerical_df.columns[feature_index]}")
 print(f"\n🔹 Mean: {mean_value:.4f}")
 print(f"\n🔹 Variance: {variance_value:.4f}")
 
+# 🔹 Select Two Feature Vectors (Modify indices if needed)
+vec_1 = features[5]  # First feature vector
+vec_2 = features[10]  # Second feature vector
+
+# 🔹 Compute Minkowski Distance for r = 1 to 10
+r_values = np.arange(1, 11)
+minkowski_distances = [minkowski(vec_1, vec_2, r) for r in r_values]
+
+# 🔹 Plot Minkowski Distance vs r
+plt.figure(figsize=(8, 5))
+plt.plot(r_values, minkowski_distances, marker='o', linestyle='-', color='b')
+plt.xlabel("r Value")
+plt.ylabel("Minkowski Distance")
+plt.title("Minkowski Distance vs r")
+plt.xticks(r_values)
+plt.grid()
+plt.show()
+
+# 🔹 Print Minkowski Distances
+for r, dist in zip(r_values, minkowski_distances):
+    print(f"r = {r}: Minkowski Distance = {dist:.4f}")
