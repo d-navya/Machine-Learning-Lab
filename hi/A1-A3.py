@@ -76,7 +76,7 @@ def compute_minkowski_distance(features, vec_1_index, vec_2_index, r_values):
 
 if __name__ == "__main__":
     # Load dataset
-    file_path = "hi/15 - C.xlsx"  # Update this with the actual file path
+    file_path = "hi/15 - C.xlsx" 
     numerical_df = load_data(file_path)
     
     # Extract features and labels
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     print(f"\nInterclass Distance between Class {class_1} and Class {class_2}: {interclass_distance:.4f}")
     
     # Analyze a selected feature
-    feature_index = 5  # Modify if needed
+    feature_index = 5  
     mean_value, variance_value = analyze_feature(numerical_df, feature_index)
     
     print(f"\nFeature Selected: {numerical_df.columns[feature_index]}")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     print(f"\nVariance: {variance_value:.4f}")
     
     # Compute Minkowski distance
-    vec_1_index, vec_2_index = 5, 10  # Modify indices if needed
+    vec_1_index, vec_2_index = 5, 10 
     r_values = np.arange(1, 11)
     minkowski_distances = compute_minkowski_distance(features, vec_1_index, vec_2_index, r_values)
     
