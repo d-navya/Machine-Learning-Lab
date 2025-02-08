@@ -1,39 +1,38 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-# Load the dataset
-file_path = "hi/15 - C.xlsx"  # Update this with your file path if needed
+# 🔹 Load the dataset
+file_path = "hi/15 - C.xlsx"  # Update this with your actual file path
 df = pd.read_excel(file_path)
 
-# Convert all data to numeric (force conversion)
-df = df.apply(pd.to_numeric, errors='coerce')
+# 🔹 Extract numerical columns only
+numerical_df = df.select_dtypes(include=['int64', 'float64'])
 
-# Drop NaN values (optional, but useful to avoid issues)
-df = df.dropna()
+# 🔹 Extract Features & Labels
+features = numerical_df.iloc[:, :-1].values  # Features: all but last numerical column
+labels = numerical_df.iloc[:, -1].values  # Labels: last numerical column
 
-# Convert labels to integers (assuming the last column contains class labels)
-features = df.iloc[:, :-1].values  # Extract features
-labels = df.iloc[:, -1].astype(int).values  # Convert labels to integers
+# 🔹 Select Two Classes
+class_1, class_2 = 10, 5 
 
-# --- A1: Intraclass Spread and Interclass Distance ---
-def calculate_intraclass_interclass(features, labels):
-    unique_classes = np.unique(labels)
+# 🔹 Filter data for selected classes
+class_1_vectors = features[labels == class_1]
+class_2_vectors = features[labels == class_2]
 
-    centroids = {}
-    spreads = {}
+# 🔹 Calculate Centroids
+centroid_1 = np.mean(class_1_vectors, axis=0)
+centroid_2 = np.mean(class_2_vectors, axis=0)
 
-    for cls in unique_classes:
-        class_vectors = features[labels == cls]  # Ensure valid indexing
-        centroids[cls] = np.mean(class_vectors, axis=0)
-        spreads[cls] = np.std(class_vectors, axis=0)
+# 🔹 Calculate Spread (Standard Deviation)
+spread_1 = np.std(class_1_vectors, axis=0)
+spread_2 = np.std(class_2_vectors, axis=0)
 
-    # Calculate interclass distance (Euclidean)
-    if len(unique_classes) >= 2:
-        centroid_values = list(centroids.values())
-        interclass_distance = np.linalg.norm(centroid_values[0] - centroid_values[1])
-        print(f"Interclass Distance: {interclass_distance}")
+# 🔹 Calculate Interclass Distance (Euclidean Distance between Centroids)
+interclass_distance = np.linalg.norm(centroid_1 - centroid_2)
 
-    return centroids, spreads
-
-centroids, spreads = calculate_intraclass_interclass(features, labels)
+# 🔹 Print Results
+print(f"\n🔹 Centroid for Class {class_1}:\n", centroid_1)
+print(f"\n🔹 Spread (Standard Deviation) for Class {class_1}:\n", spread_1)
+print(f"\n🔹 Centroid for Class {class_2}:\n", centroid_2)
+print(f"\n🔹 Spread (Standard Deviation) for Class {class_2}:\n", spread_2)
+print(f"\n🔹 Interclass Distance between Class {class_1} and Class {class_2}: {interclass_distance:.4f}")
