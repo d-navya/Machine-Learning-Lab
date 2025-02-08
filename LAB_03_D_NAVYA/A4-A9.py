@@ -199,7 +199,7 @@ def print_confusion_matrix(y_test, y_pred):
 
 # **Main Execution**
 if __name__ == "__main__":
-    file_path = 'hi/15 - C.xlsx'
+    file_path = 'LAB_03_D_NAVYA/15 - C.xlsx'
 
     df = load_dataset(file_path)
     df = preprocess_data(df)
